@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "tileserver-gl-light": "^5.6.0"
+  }
+}

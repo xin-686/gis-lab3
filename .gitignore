@@ -1,0 +1,13 @@
+# 大体积文件，不推送到 GitHub
+planetiler.jar
+tiles-data/
+tiles-tmp/
+lab03_doc.zip
+lab03_doc_text.txt
+docx_extract/
+data/sources/
+tile_weights.tsv.gz
+
+# 依赖
+node_modules/
+package-lock.json

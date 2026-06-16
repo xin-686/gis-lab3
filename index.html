@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>实验三 WebGIS 二维开发与个人GIS作品集</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">GIS工程与开发 · 上机实验三</p>
+        <h1>WebGIS 二维开发与个人 GIS 作品集</h1>
+        <p class="subtitle">
+          以 Leaflet、GeoJSON 和 MapLibre GL JS 构建一个可展示个人足迹、专题分析与矢量瓦片效果的综合实验页面。
+          底图基于个人中国 OSM 数据（china-260615.osm.pbf），经 Planetiler 转换为矢量瓦片后由 tileserver-gl-light 本地提供服务。
+        </p>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-card"><span class="stat-label">实验模块</span><strong>7 个</strong></div>
+        <div class="stat-card"><span class="stat-label">底图方案</span><strong>OSM + 本地PBF</strong></div>
+        <div class="stat-card"><span class="stat-label">部署目标</span><strong>GitHub Pages</strong></div>
+      </div>
+    </header>
+
+    <nav class="tab-bar" id="tabBar">
+      <button class="tab-button active" data-tab-target="leaflet-section">（1）Leaflet 底图与标注</button>
+      <button class="tab-button" data-tab-target="geojson-section">（2）GeoJSON 专题图</button>
+      <button class="tab-button" data-tab-target="maplibre-section">（3）MapLibre 可视化</button>
+      <button class="tab-button" data-tab-target="portfolio-section">（4）P1 作品集</button>
+      <button class="tab-button" data-tab-target="bivariate-section">（6）双变量专题图</button>
+      <button class="tab-button" data-tab-target="editor-section">（7）标注编辑器</button>
+      <button class="tab-button" data-tab-target="deploy-section">（5）部署说明</button>
+    </nav>
+
+    <main class="content">
+
+      <!-- ========== (1) Leaflet ========== -->
+      <section class="tab-panel active" id="leaflet-section">
+        <div class="section-head">
+          <div><h2>（1）Leaflet 地图与标注交互</h2><p>多底图切换、POI 标注、地图书签、比例尺、坐标显示与距离测量。</p></div>
+        </div>
+        <div class="two-column">
+          <aside class="panel">
+            <h3>地图书签</h3>
+            <div class="button-grid" id="bookmarkButtons"></div>
+            <h3>测量工具</h3>
+            <button class="action-button" id="measureToggle">开启距离测量</button>
+            <button class="action-button secondary" id="clearMeasure">清空测量结果</button>
+            <div class="info-box">
+              <h4>操作提示</h4>
+              <p>开启测量后，单击地图连续取点，双击结束。右上角图层控件可切换底图。</p>
+            </div>
+            <div class="legend-block">
+              <h4>POI 图标说明</h4>
+              <ul class="legend-list">
+                <li><span class="legend-dot campus"></span>校园学习点</li>
+                <li><span class="legend-dot museum"></span>文化场馆</li>
+                <li><span class="legend-dot scenic"></span>自然景观</li>
+                <li><span class="legend-dot traffic"></span>交通枢纽</li>
+              </ul>
+            </div>
+            <div class="info-box">
+              <h4>实时坐标</h4>
+              <p id="mouseCoords">经度 --，纬度 --</p>
+              <p id="measureStatus">当前未开始测量。</p>
+            </div>
+          </aside>
+          <div class="map-card"><div id="leafletMap" class="map-panel"></div></div>
+        </div>
+      </section>
+
+      <!-- ========== (2) GeoJSON 专题图 ========== -->
+      <section class="tab-panel" id="geojson-section">
+        <div class="section-head">
+          <div><h2>（2）GeoJSON 专题地图</h2><p>真实行政区 GeoJSON 的分级设色图与比例符号图，含点要素过滤与图例。</p></div>
+        </div>
+        <div class="two-column">
+          <aside class="panel">
+            <h3>专题图参数</h3>
+            <div class="metric-list">
+              <div class="metric-item"><span>分级设色字段</span><strong>studyIndex（学习关注指数）</strong></div>
+              <div class="metric-item"><span>比例符号字段</span><strong>visitCount（调研访问次数）</strong></div>
+              <div class="metric-item"><span>点要素过滤</span><strong>importance >= 4</strong></div>
+              <div class="metric-item"><span>配色方案</span><strong>蓝色顺序色带（Blue Sequential）</strong></div>
+            </div>
+            <div class="info-box">
+              <h4>配色方案说明</h4>
+              <p>选用蓝色顺序色带（light blue → deep navy），从浅蓝 #dbeafe 到深蓝 #0b3c8a 共 5 级。适合表达从低到高的连续数量变化，符合"学习关注指数"的单向递增语义，避免使用发散色带造成"零值中心"的误导。</p>
+            </div>
+            <div id="regionInfo" class="info-box">
+              <h4>区域信息</h4><p>将鼠标移到行政区查看详细属性。</p>
+            </div>
+          </aside>
+          <div class="map-card"><div id="geojsonMap" class="map-panel"></div></div>
+        </div>
+      </section>
+
+      <!-- ========== (3) MapLibre ========== -->
+      <section class="tab-panel" id="maplibre-section">
+        <div class="section-head">
+          <div><h2>（3）MapLibre GL JS 矢量瓦片可视化</h2><p>矢量瓦片底图、GeoJSON Source/Layer、数据驱动样式、点聚合、样式切换与建筑 3D 拉伸。</p></div>
+        </div>
+        <div class="two-column">
+          <aside class="panel">
+            <h3>底图样式切换</h3>
+            <div class="button-grid" id="styleButtons">
+              <button class="action-button active" data-style-key="liberty">Liberty 浅色</button>
+              <button class="action-button" data-style-key="positron">Positron 灰白</button>
+              <button class="action-button" data-style-key="dark">Dark 深色</button>
+            </div>
+            <h3>数据主题切换</h3>
+            <div class="button-grid" id="themeButtons">
+              <button class="action-button active" data-theme-key="cool">冷色主题</button>
+              <button class="action-button" data-theme-key="warm">暖色主题</button>
+              <button class="action-button" data-theme-key="contrast">对比主题</button>
+            </div>
+            <div class="info-box">
+              <h4>实现内容</h4>
+              <p><strong>数据驱动样式</strong>：点颜色按 importance 分级、半径按 checkins 映射。</p>
+              <p><strong>点聚合</strong>：cluster:true + clusterRadius:46，点击展开。</p>
+              <p><strong>fill-extrusion 3D 建筑</strong>：4 栋模拟建筑，高度 65-120m。</p>
+              <p><strong>样式切换</strong>：3 套底图 × 3 套配色 = 9 种组合。</p>
+            </div>
+            <div class="info-box" id="maplibreCoords">
+              <h4>实时坐标</h4><p>移动鼠标查看经纬度。</p>
+            </div>
+          </aside>
+          <div class="map-card"><div id="maplibreMap" class="map-panel"></div></div>
+        </div>
+      </section>
+
+      <!-- ========== (4) P1 作品集 ========== -->
+      <section class="tab-panel" id="portfolio-section">
+        <div class="section-head">
+          <div><h2>（4）二维综合作品集（P1）</h2><p>整合多图层、专题图、交互与信息面板，围绕"城市学习足迹与兴趣点档案"主题的完整 GIS 作品集。</p></div>
+        </div>
+        <div class="two-column">
+          <aside class="panel">
+            <h3>城市学习足迹与兴趣点档案</h3>
+            <p>通过一张综合地图整合个人跨区域学习足迹、兴趣点标注与区域专题分析。图层结构如下：</p>
+            <div class="metric-list">
+              <div class="metric-item"><span>基础底图</span><strong>OSM 标准图层</strong></div>
+              <div class="metric-item"><span>专题表达</span><strong>分级设色 + 比例符号</strong></div>
+              <div class="metric-item"><span>交互方式</span><strong>图层控件 + 信息面板联动</strong></div>
+              <div class="metric-item"><span>数据内容</span><strong>10 个足迹点 + 8 个专题区</strong></div>
+            </div>
+            <div id="portfolioInfo" class="info-box">
+              <h4>信息面板</h4><p>点击地图中的省份或兴趣点，查看作品集详细信息。</p>
+            </div>
+            <div class="legend-block">
+              <h4>图层结构</h4>
+              <ul class="legend-list">
+                <li><span class="legend-dot campus"></span>个人足迹点图层（10 个 POI）</li>
+                <li><span class="legend-dot scenic"></span>足迹路线图层（按序号串联）</li>
+                <li><span class="legend-dot museum"></span>区域专题图层（8 个省级行政区分级设色）</li>
+                <li><span class="legend-dot traffic"></span>基础底图图层（OSM）</li>
+              </ul>
+            </div>
+          </aside>
+          <div class="map-card"><div id="portfolioMap" class="map-panel"></div></div>
+        </div>
+      </section>
+
+      <!-- ========== (6) 双变量地图（加分） ========== -->
+      <section class="tab-panel" id="bivariate-section">
+        <div class="section-head">
+          <div><h2>（6）双变量专题图（加分项）</h2><p>同时展示 studyIndex（学习关注指数）与 visitCount（访问次数）两个变量的空间分布关系。</p></div>
+        </div>
+        <div class="two-column">
+          <aside class="panel">
+            <h3>双变量矩阵说明</h3>
+            <p>采用 3×3 双变量色带矩阵，横轴为学习关注指数（低/中/高），纵轴为访问次数（低/中/高），共 9 种颜色组合。</p>
+            <div class="bivariate-matrix" id="bivariateMatrix"></div>
+            <div class="info-box">
+              <h4>配色方案</h4>
+              <p>左下角（浅灰）：低关注 + 低访问；右上角（深蓝绿）：高关注 + 高访问。</p>
+              <p>对角线上颜色表示两变量同步递增，偏离对角线表示某一变量更突出。</p>
+            </div>
+            <div id="bivariateInfo" class="info-box">
+              <h4>区域信息</h4><p>将鼠标移到行政区查看双变量属性。</p>
+            </div>
+          </aside>
+          <div class="map-card"><div id="bivariateMap" class="map-panel"></div></div>
+        </div>
+      </section>
+
+      <!-- ========== (7) 标注编辑器（加分） ========== -->
+      <section class="tab-panel" id="editor-section">
+        <div class="section-head">
+          <div><h2>（7）标注编辑器（加分项）</h2><p>在地图上点击添加新标注点，支持自定义名称、类别与备注，可编辑已有标注或删除。</p></div>
+        </div>
+        <div class="two-column">
+          <aside class="panel">
+            <h3>编辑模式</h3>
+            <button class="action-button" id="editorAddMode">进入添加模式</button>
+            <button class="action-button secondary" id="editorExitMode">退出编辑</button>
+            <button class="action-button secondary" id="editorExport">导出标注 GeoJSON</button>
+            <button class="action-button secondary" id="editorClearAll">清空自定义标注</button>
+            <div class="info-box" style="margin-top:12px">
+              <h4>操作说明</h4>
+              <p>进入添加模式后，单击地图任意位置添加新标注点。</p>
+              <p>点击已有标注可编辑名称和备注。</p>
+            </div>
+            <div id="editorInfo" class="info-box">
+              <h4>标注详情</h4><p>点击地图上的标注选择要编辑的对象。</p>
+            </div>
+            <div class="legend-block">
+              <h4>标注统计</h4>
+              <p id="editorStats">自定义标注：0 个</p>
+            </div>
+          </aside>
+          <div class="map-card"><div id="editorMap" class="map-panel"></div></div>
+        </div>
+      </section>
+
+      <!-- ========== (5) 部署说明 ========== -->
+      <section class="tab-panel" id="deploy-section">
+        <div class="section-head">
+          <div><h2>（5）部署上线与拓展</h2><p>本地运行指南、GitHub Pages 部署步骤、拓展方向说明。</p></div>
+        </div>
+        <div class="portfolio-grid">
+          <article class="panel">
+            <h3>本地运行（在线底图模式）</h3>
+            <pre><code>cd D:\GIS实验三
+python -m http.server 8000</code></pre>
+            <p>访问 http://localhost:8000/ 即可查看。底图使用 OSM 在线瓦片。</p>
+          </article>
+          <article class="panel">
+            <h3>本地运行（PBF 矢量瓦片模式）</h3>
+            <pre><code>cd D:\GIS实验三
+:: 启动瓦片服务（端口 8080）
+npx tileserver-gl-light tiles-data\china.mbtiles -p 8080
+:: 另开终端启动页面服务（端口 8000）
+python -m http.server 8000</code></pre>
+            <p>访问 http://localhost:8000/ ，页面自动检测本地瓦片服务。</p>
+          </article>
+          <article class="panel">
+            <h3>GitHub Pages 部署</h3>
+            <ol class="text-list ordered">
+              <li>在 GitHub 新建仓库，上传项目文件。</li>
+              <li>进入 Settings → Pages，选择 main 分支根目录。</li>
+              <li>等待部署完成，获得 `https://用户名.github.io/仓库名/` 链接。</li>
+              <li>项目使用在线 OSM 底图，无需额外配置即可运行。</li>
+            </ol>
+          </article>
+          <article class="panel">
+            <h3>拓展功能说明</h3>
+            <ul class="text-list">
+              <li><strong>双变量专题图</strong>：同时展示 studyIndex 与 visitCount 的 3×3 矩阵色带。</li>
+              <li><strong>标注编辑器</strong>：支持在地图上添加、编辑、删除自定义标注点并导出 GeoJSON。</li>
+              <li><strong>本地 PBF 底图</strong>：通过 Planetiler + tileserver-gl-light 将个人 OSM 数据转为矢量瓦片底图。</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
